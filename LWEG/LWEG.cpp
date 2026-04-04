@@ -91,7 +91,7 @@ void LWEG::prng(std::vector<uint8_t> &bytes)
 				xorResult ^= b[k];
 		}
 		for (int i = 0; i < 32; i++) {
-			prfShakeInput[i] = xorResult[i] & 256;
+			prfShakeInput[i] = xorResult[i] & 255;
 		}
 
 		s = samplePolyVector(ring, lwegContext.polySize, lwegContext.noise, prfShakeInput, N);
