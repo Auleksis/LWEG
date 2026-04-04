@@ -68,7 +68,7 @@ PolyVector samplePolyVector(const PolyRing &ring, int vectorSize, int noise, uin
 
 	for (int i = 0; i < vectorSize; i++) {
 		memcpy(prfShake + 32, &N, sizeof(int));
-		shake256_hash(prfShake, 33, B.data(), 64 * (int)noise);
+		shake256_hash(prfShake, 36, B.data(), 64 * (int)noise);
 		result[i] = samplePolyCBD(ring, noise, B.data());
 		N++;
 	}
