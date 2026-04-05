@@ -73,6 +73,7 @@ void LWEG::prng(std::vector<uint8_t> &bytes)
 			for (int k = 1; k < lwegContext.polySize; k++) {
 					xorResult ^= b[k];
 			}
+			xorResult ^= s[counter % lwegContext.polySize];
 			for (int i = 0; i < 32; i++) {
 				prfShakeInput[i] = xorResult[i] & 255;
 			}
