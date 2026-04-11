@@ -2,10 +2,10 @@
 
 LWEG::LWEG(const PolyRing& ring, const LWEGContext& lwegContext):
 	ring(ring), lwegContext(lwegContext),
-	s(ring, lwegContext.polySize),
-	e(ring, lwegContext.polySize)
+	s(ring, lwegContext.martixRank),
+	e(ring, lwegContext.martixRank)
 {
-	vectorA = std::vector<PolyMatrix>(lwegContext.m, PolyMatrix(ring, lwegContext.polySize));
+	vectorA = std::vector<PolyMatrix>(lwegContext.m, PolyMatrix(ring, lwegContext.martixRank));
 }
 
 void LWEG::initialize(std::vector<uint8_t>& d)
@@ -13,7 +13,7 @@ void LWEG::initialize(std::vector<uint8_t>& d)
     std::vector<uint8_t> gHash(64);
 	std::vector<uint8_t> gHashInput(33);
 	memcpy(gHashInput.data(), d.data(), 32);
-	gHashInput[32] = lwegContext.polySize;
+	gHashInput[32] = lwegContext.martixRank;
 
 	if (!EVP_Digest(gHashInput.data(), gHashInput.size(), gHash.data(), nullptr, EVP_sha3_512(), nullptr)) {
 		printf("Error while G hash calculation in LWEG::initialize\n");
@@ -26,8 +26,8 @@ void LWEG::initialize(std::vector<uint8_t>& d)
 	memcpy(sigma, &gHash[32], 32);
 
 	for (int m = 0; m < lwegContext.m; m++) {
-		for (int i = 0; i < lwegContext.polySize; i++) {
-			for (int j = 0; j < lwegContext.polySize; j++) {
+		for (int i = 0; i < lwegContext.martixRank; i++) {
+			for (int j = 0; j < lwegContext.martixRank; j++) {
 				sampleNTT(ring, vectorA[m], rho, i, j, m);
 			}
 		}
@@ -38,10 +38,10 @@ void LWEG::initialize(std::vector<uint8_t>& d)
 
 	uint8_t N = 0;
 
-	s = samplePolyVector(ring, lwegContext.polySize, lwegContext.noise, prfShakeInput, N);
+	s = samplePolyVector(ring, lwegContext.martixRank, lwegContext.noise, prfShakeInput, N);
 	s.ntt();
-	N += lwegContext.polySize;
-	e = samplePolyVector(ring, lwegContext.polySize, lwegContext.noise, prfShakeInput, N);
+	N += lwegContext.martixRank;
+	e = samplePolyVector(ring, lwegContext.martixRank, lwegContext.noise, prfShakeInput, N);
 	e.ntt();
 }
 
@@ -59,7 +59,7 @@ void LWEG::prng(std::vector<uint8_t> &bytes)
 			PolyVector b = A * s + e;
 			b.invntt();
 			
-			for(int i = 0; i < lwegContext.polySize; i++) {
+			for(int i = 0; i < lwegContext.martixRank; i++) {
 				for(int j = 0; j < ring.n; j++) {
 					if(b[i][j] < lwegContext.qS) {
 						output.push_back(b[i][j] & 255);
@@ -70,17 +70,17 @@ void LWEG::prng(std::vector<uint8_t> &bytes)
 
 
 			Poly xorResult = b[0];
-			for (int k = 1; k < lwegContext.polySize; k++) {
+			for (int k = 1; k < lwegContext.martixRank; k++) {
 					xorResult ^= b[k];
 			}
-			xorResult ^= s[counter % lwegContext.polySize];
+			xorResult ^= s[counter % lwegContext.martixRank];
 			for (int i = 0; i < 32; i++) {
 				prfShakeInput[i] = xorResult[i] & 255;
 			}
 
-			e = samplePolyVector(ring, lwegContext.polySize, lwegContext.noise, prfShakeInput, N);
+			e = samplePolyVector(ring, lwegContext.martixRank, lwegContext.noise, prfShakeInput, N);
 			e.ntt();
-			N += lwegContext.polySize;
+			N += lwegContext.martixRank;
 		}
 
 		PolyMatrix A = vectorA[lwegContext.m - 1];
@@ -88,19 +88,19 @@ void LWEG::prng(std::vector<uint8_t> &bytes)
 		b.invntt();
 
 		Poly xorResult = b[0];
-		for (int k = 1; k < lwegContext.polySize; k++) {
+		for (int k = 1; k < lwegContext.martixRank; k++) {
 				xorResult ^= b[k];
 		}
 		for (int i = 0; i < 32; i++) {
 			prfShakeInput[i] = xorResult[i] & 255;
 		}
 
-		s = samplePolyVector(ring, lwegContext.polySize, lwegContext.noise, prfShakeInput, N);
+		s = samplePolyVector(ring, lwegContext.martixRank, lwegContext.noise, prfShakeInput, N);
 		s.ntt();
-		N += lwegContext.polySize;
-		e = samplePolyVector(ring, lwegContext.polySize, lwegContext.noise, prfShakeInput, N);
+		N += lwegContext.martixRank;
+		e = samplePolyVector(ring, lwegContext.martixRank, lwegContext.noise, prfShakeInput, N);
 		e.ntt();
-		N += lwegContext.polySize;
+		N += lwegContext.martixRank;
 	}
 
 	for (int i = 0; i < bytes.size(); i++) {

@@ -38,6 +38,7 @@ set(SOURCES
     utils/bytesUtils/bytesUtils.cpp
     utils/sample/sample.cpp
     LWEG/LWEG.cpp
+    Tests/tests.cpp
     main.cpp
 )
 
